@@ -36,5 +36,6 @@ class HyperResource
 
   class ClientError < ResponseError; end
   class ServerError < ResponseError; end
+  class TokenExpiredError < ClientError; end
 end
 

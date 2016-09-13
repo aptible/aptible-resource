@@ -467,6 +467,26 @@ describe Aptible::Resource::Base do
         expect(exception).to be_a(HyperResource::ClientError)
       end
 
+      it 'should throw a token expired exception for expired tokens' do
+        resource = nil
+        exception = nil
+
+        configure_new_coordinator do
+          define_method(:initialize) { |r| resource = r }
+          define_method(:retry?) { |e| (exception = e) && false }
+        end
+
+        stub_request(:get, 'foo.com')
+          .to_return(body: { error: 'expired_token' }.to_json, status: 401)
+
+        expect { subject.get.body }
+          .to raise_error(HyperResource::ClientError, /expired_token/)
+
+        expect(resource).to be_a(Api)
+        expect(exception).to be_a(HyperResource::TokenExpiredError)
+      end
+
+
       it 'should let the coordinator change e.g. the request token' do
         subject.token = 'foo'
         retry_was_called = false
