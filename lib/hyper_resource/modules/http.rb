@@ -121,6 +121,11 @@ class HyperResource
         elsif status / 100 == 3
           raise 'HyperResource does not handle redirects'
         elsif status / 100 == 4
+          if body && body['error'] == 'expired_token'
+            raise HyperResource::TokenExpiredError.new(status.to_s,
+                                                       response: response,
+                                                       body: body)
+          end
           raise HyperResource::ClientError.new(status.to_s,
                                                response: response,
                                                body: body)
