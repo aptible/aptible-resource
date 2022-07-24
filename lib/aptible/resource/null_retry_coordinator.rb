@@ -1,10 +1,9 @@
 module Aptible
   module Resource
     class NullRetryCoordinator
-      def initialize(_)
-      end
+      def initialize(___); end
 
-      def retry?(_, _)
+      def retry?(___, ____)
         false
       end
     end

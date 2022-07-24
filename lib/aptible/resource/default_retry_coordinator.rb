@@ -35,9 +35,12 @@ module Aptible
       def retry?(method, err)
         # rubocop:disable Style/CaseEquality
         return false unless RETRY_ERRORS.any? { |c| c === err }
+
         return false unless IDEMPOTENT_METHODS.include?(method)
+
         retry_in = retry_schedule.shift
         return false if retry_in.nil?
+
         sleep retry_in
         true
         # rubocop:enable Style/CaseEquality

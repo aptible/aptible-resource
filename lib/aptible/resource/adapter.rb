@@ -6,6 +6,7 @@ module Aptible
           return nil unless object
 
           return nil unless (type = object['_type'])
+
           if type.respond_to?(:camelize)
             type.camelize
           else

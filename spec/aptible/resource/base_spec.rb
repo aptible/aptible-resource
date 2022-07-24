@@ -1,5 +1,7 @@
 require 'spec_helper'
 
+# rubocop:disable BlockLength
+# rubocop:disable InterpolationCheck
 describe Aptible::Resource::Base do
   let(:hyperresource_exception) { HyperResource::ResponseError.new('403') }
   let(:error_response) { double 'Faraday::Response' }
@@ -36,6 +38,7 @@ describe Aptible::Resource::Base do
           calls << u
           page = pages[u]
           raise "Accessed unexpected URL #{u}" if page.nil?
+
           page
         end
       end
@@ -87,7 +90,7 @@ describe Aptible::Resource::Base do
 
       before do
         collection.stub(:entries) { [mainframe] }
-        collection.stub(:links) { Hash.new }
+        collection.stub(:links) { {} }
         Api::Mainframe.any_instance.stub(:find_by_url) { collection }
       end
 
@@ -269,7 +272,7 @@ describe Aptible::Resource::Base do
       HyperResource.any_instance.stub(:put) { raise hyperresource_exception }
       begin
         subject.update!({})
-      rescue
+      rescue StandardError
         # Allow errors to be populated and tested
         nil
       end
@@ -743,3 +746,5 @@ describe Aptible::Resource::Base do
     end
   end
 end
+# rubocop:enable InterpolationCheck
+# rubocop:enable BlockLength
