@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 # With webmock (fake connections), to check how we handle timeouts.
+# rubocop:disable BlockLength
 describe Aptible::Resource::Base do
   let(:body) do
     { 'hello' => '1', '_links' => { 'self' => { 'href' => href } } }
@@ -156,3 +157,4 @@ describe Aptible::Resource::Base do
     end
   end
 end
+# rubocop:enable BlockLength

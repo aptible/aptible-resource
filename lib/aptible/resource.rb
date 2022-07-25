@@ -42,6 +42,7 @@ module Aptible
       def retry_coordinator_class
         override = Thread.current[RETRY_COORDINATOR_OVERRIDE]
         return override if override
+
         configuration.retry_coordinator_class
       end
     end

@@ -5,7 +5,7 @@ require 'active_support/core_ext'
 require 'date'
 
 # Require vendored HyperResource
-$LOAD_PATH.unshift File.expand_path('../..', __FILE__)
+$LOAD_PATH.unshift File.expand_path('..', __dir__)
 require 'hyper_resource'
 
 require 'aptible/resource/adapter'
@@ -15,12 +15,14 @@ require 'aptible/resource/boolean'
 module Aptible
   module Resource
     # rubocop:disable ClassLength
+    # rubocop:disable DuplicateMethods
     class Base < HyperResource
       attr_accessor :errors
       attr_reader :token
 
       def self.get_data_type_from_response(response)
         return nil unless response && response.body
+
         adapter.get_data_type_from_object(adapter.deserialize(response.body))
       end
 
@@ -79,6 +81,7 @@ module Aptible
         new(options).find_by_url(url)
       rescue HyperResource::ClientError => e
         return nil if e.response.status == 404
+
         raise e
       end
 
@@ -182,6 +185,7 @@ module Aptible
 
         define_method iterator_method do |&block|
           next enum_for(iterator_method) if block.nil?
+
           send(relation).each(&block)
         end
       end
@@ -224,6 +228,7 @@ module Aptible
         end
       end
 
+      # rubocop:disable ReturnInVoidContext
       def initialize(options = {})
         return super(options) unless options.is_a?(Hash)
 
@@ -231,6 +236,7 @@ module Aptible
         super(options)
         self.token = options[:token] if options[:token]
       end
+      # rubocop:enable ReturnInVoidContext
 
       def populate_default_options!(options)
         options[:root] ||= root_url
@@ -317,5 +323,6 @@ module Aptible
       end
     end
     # rubocop:enable ClassLength
+    # rubocop:enable DuplicateMethods
   end
 end

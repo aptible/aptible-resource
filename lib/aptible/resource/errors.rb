@@ -1,6 +1,7 @@
 module Aptible
   module Resource
     class Errors
+      # rubocop:disable DuplicateMethods
       attr_accessor :status_code, :messages, :full_messages
 
       def self.from_exception(exception)
@@ -23,6 +24,7 @@ module Aptible
       def any?
         full_messages.any?
       end
+      # rubocop:enable DuplicateMethods
     end
   end
 end
