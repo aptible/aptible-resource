@@ -36,11 +36,16 @@ class HyperResource
       # by loading Webmock first, but this is just as simple.
       initialize_http_client!
 
+      def configure_client
+        HTTP.http_client.receive_timeout = Aptible::Resource.configuration.timeout
+      end
+
       ## Loads and returns the resource pointed to by +href+.  The returned
       ## resource will be blessed into its "proper" class, if
       ## +self.class.namespace != nil+.
       def get
         execute_request('GET') do |uri, headers|
+          puts uri
           HTTP.http_client.get(
             uri,
             follow_redirect: true,

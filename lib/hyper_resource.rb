@@ -76,6 +76,8 @@ public
       end
     end
 
+    configure_client
+
     self.attributes = self.class::Attributes.new(self)
     self.links      = self.class::Links.new(self)
     self.objects    = self.class::Objects.new(self)

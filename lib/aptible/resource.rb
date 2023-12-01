@@ -19,6 +19,10 @@ module Aptible
       has :user_agent,
           classes: [String],
           default: "aptible-resource #{Aptible::Resource::VERSION}"
+      
+      has :timeout,
+          classes: [Integer],
+          default: 1
 
       has :logger,
           classes: [Logger],
