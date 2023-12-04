@@ -23,7 +23,6 @@ class HyperResource
             c.cookie_manager = nil
             c.connect_timeout = 30
             c.send_timeout = 45
-            c.receive_timeout = 30
             c.keep_alive_timeout = 15
             c.ssl_config.set_default_paths
           end
@@ -35,6 +34,11 @@ class HyperResource
       # happens after we initialized  the constant (we could work around that
       # by loading Webmock first, but this is just as simple.
       initialize_http_client!
+
+      # Allow the application to configure the timeout
+      def configure_client
+        HTTP.http_client.receive_timeout = Aptible::Resource.configuration.timeout
+      end
 
       ## Loads and returns the resource pointed to by +href+.  The returned
       ## resource will be blessed into its "proper" class, if

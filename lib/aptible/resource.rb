@@ -20,6 +20,10 @@ module Aptible
           classes: [String],
           default: "aptible-resource #{Aptible::Resource::VERSION}"
 
+      has :timeout,
+          classes: [Integer],
+          default: 90
+
       has :logger,
           classes: [Logger],
           default: Logger.new(STDERR).tap { |l| l.level = Logger::WARN }

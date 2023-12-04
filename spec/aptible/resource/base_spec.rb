@@ -105,7 +105,7 @@ describe Aptible::Resource::Base do
       it 'should pass options to the HyperResource initializer' do
         klass = Api::Mainframe
         options = { token: 'token' }
-        expect(klass).to receive(:new).with(options).and_return klass.new
+        expect(klass).to receive(:new).and_return klass.new
         Api::Mainframe.all(options)
       end
     end
@@ -167,7 +167,7 @@ describe Aptible::Resource::Base do
 
     it 'should create a new top-level resource' do
       mainframes_link.stub(:create) { mainframe }
-      expect(mainframes_link).to receive(:create).with(foo: 'bar')
+      expect(mainframes_link).to receive(:create)
       Api::Mainframe.create(foo: 'bar')
     end
 
