@@ -1,7 +1,6 @@
 # ![](https://raw.github.com/aptible/straptible/master/lib/straptible/rails/templates/public.api/icon-60px.png) Aptible::Resource
 
 [![Gem Version](https://badge.fury.io/rb/aptible-resource.png)](https://rubygems.org/gems/aptible-resource)
-[![Build Status](https://travis-ci.org/aptible/aptible-resource.png?branch=master)](https://travis-ci.org/aptible/aptible-resource)
 [![Dependency Status](https://gemnasium.com/aptible/aptible-resource.png)](https://gemnasium.com/aptible/aptible-resource)
 
 Foundation classes for Aptible resource server gems.
