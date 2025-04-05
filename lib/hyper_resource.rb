@@ -16,6 +16,7 @@ require 'hyper_resource/modules/internal_attributes'
 require 'rubygems' if RUBY_VERSION[0..2] == '1.8'
 
 require 'pp'
+require 'pry'
 
 ## HyperResource is the main resource base class.  Normally it will be used
 ## through subclassing, though it may also be used directly.
@@ -133,6 +134,7 @@ public
   ## Iterates over the objects in the first collection of embedded objects
   ## in this resource.
   def each(&block)
+    binding.pry
     get unless loaded
     self.objects.first[1].each(&block)
   end
