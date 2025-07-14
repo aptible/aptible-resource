@@ -23,15 +23,16 @@ Gem::Specification.new do |spec|
   # HyperResource dependencies
   spec.add_dependency 'activesupport'
   spec.add_dependency 'fridge'
-  spec.add_dependency 'gem_config', '~> 0.3.1'
-  spec.add_dependency 'httpclient', '~> 2.8'
+  spec.add_dependency 'gem_config'
+  spec.add_dependency 'httpclient'
   spec.add_dependency 'json'
-  spec.add_dependency 'uri_template', '>= 0.5.2'
+  spec.add_dependency 'uri_template'
 
   spec.add_development_dependency 'aptible-tasks'
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'pry'
-  spec.add_development_dependency 'rake', '< 11.0'
-  spec.add_development_dependency 'rspec', '~> 2.0'
-  spec.add_development_dependency 'webmock', '~> 2.3.2'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rubocop'
+  spec.add_development_dependency 'webmock'
 end
