@@ -62,6 +62,6 @@ clean: clean-gemfile-lock
 
 ## Clean up the container specific Gemfile.lock
 clean-gemfile-lock:
-	rm -v ./docker/ruby-$(RUBY_VERSION)/Gemfile.lock
+	rm -v ./docker/ruby-$(RUBY_VERSION)/Gemfile.lock ||:
 
 .PHONY: build bash test
