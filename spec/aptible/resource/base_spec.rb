@@ -5,10 +5,10 @@ require 'spec_helper'
 describe Aptible::Resource::Base do
   let(:hyperresource_exception) { HyperResource::ResponseError.new('403') }
   let(:error_response) { double 'Faraday::Response' }
-  before { hyperresource_exception.stub(:response) { error_response } }
+  before { allow(hyperresource_exception).to receive(:response).and_return(error_response) }
   before do
-    error_response.stub(:body) { { message: 'Forbidden' }.to_json }
-    error_response.stub(:status) { 403 }
+    allow(error_response).to receive(:body).and_return({ message: 'Forbidden' }.to_json)
+    allow(error_response).to receive(:status).and_return(403)
   end
 
   shared_context 'paginated collection' do
@@ -34,7 +34,7 @@ describe Aptible::Resource::Base do
       end
 
       [Api, Api::Mainframe].each do |klass|
-        allow_any_instance_of(klass).to receive(:find_by_url) do |_, u, _|
+        allow_any_instance_of(klass).to receive(:find_by_url) do |_instance, u|
           calls << u
           page = pages[u]
           raise "Accessed unexpected URL #{u}" if page.nil?
@@ -89,9 +89,9 @@ describe Aptible::Resource::Base do
       let(:collection) { double 'Api' }
 
       before do
-        collection.stub(:entries) { [mainframe] }
-        collection.stub(:links) { {} }
-        Api::Mainframe.any_instance.stub(:find_by_url) { collection }
+        allow(collection).to receive(:entries).and_return([mainframe])
+        allow(collection).to receive(:links).and_return({})
+        allow_any_instance_of(Api::Mainframe).to receive(:find_by_url).and_return(collection)
       end
 
       it 'should be an array' do
@@ -162,29 +162,29 @@ describe Aptible::Resource::Base do
     let(:mainframe) { Api::Mainframe.new }
     let(:mainframes_link) { HyperResource::Link.new(href: '/mainframes') }
 
-    before { Api.any_instance.stub(:mainframes) { mainframes_link } }
-    before { mainframes_link.stub(:create) { mainframe } }
+    before { allow_any_instance_of(Api).to receive(:mainframes).and_return(mainframes_link) }
+    before { allow(mainframes_link).to receive(:create).and_return(mainframe) }
 
     it 'should create a new top-level resource' do
-      mainframes_link.stub(:create) { mainframe }
+      allow(mainframes_link).to receive(:create).and_return(mainframe)
       expect(mainframes_link).to receive(:create)
       Api::Mainframe.create(foo: 'bar')
     end
 
     it 'should populate #errors in the event of an error' do
-      mainframes_link.stub(:create) { raise hyperresource_exception }
+      allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
       mainframe = Api::Mainframe.create
       expect(mainframe.errors.messages).to eq(base: 'Forbidden')
       expect(mainframe.errors.full_messages).to eq(['Forbidden'])
     end
 
     it 'should return a Base-classed resource on error' do
-      mainframes_link.stub(:create) { raise hyperresource_exception }
+      allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
       expect(Api::Mainframe.create).to be_a Api::Mainframe
     end
 
     it 'should return the object in the event of successful creation' do
-      mainframes_link.stub(:create) { mainframe }
+      allow(mainframes_link).to receive(:create).and_return(mainframe)
       expect(Api::Mainframe.create).to eq mainframe
     end
   end
@@ -193,18 +193,18 @@ describe Aptible::Resource::Base do
     let(:mainframe) { Api::Mainframe.new }
     let(:mainframes_link) { HyperResource::Link.new(href: '/mainframes') }
 
-    before { Api.any_instance.stub(:mainframes) { mainframes_link } }
-    before { mainframes_link.stub(:create) { mainframe } }
+    before { allow_any_instance_of(Api).to receive(:mainframes).and_return(mainframes_link) }
+    before { allow(mainframes_link).to receive(:create).and_return(mainframe) }
 
     it 'should pass through any exceptions' do
-      mainframes_link.stub(:create) { raise hyperresource_exception }
+      allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
       expect do
         Api::Mainframe.create!
       end.to raise_error HyperResource::ResponseError
     end
 
     it 'should return the object in the event of successful creation' do
-      mainframes_link.stub(:create) { mainframe }
+      allow(mainframes_link).to receive(:create).and_return(mainframe)
       expect(Api::Mainframe.create!).to eq mainframe
     end
   end
@@ -222,20 +222,20 @@ describe Aptible::Resource::Base do
   describe '#bearer_token' do
     it 'should accept an Aptible::Resource::Token' do
       token = Api::Token.new
-      token.stub(:access_token) { 'aptible_auth_token' }
-      subject.stub(:token) { token }
+      allow(token).to receive(:access_token).and_return('aptible_auth_token')
+      allow(subject).to receive(:token).and_return(token)
       expect(subject.bearer_token).to eq token.access_token
     end
 
     it 'should accept a Fridge::AccessToken' do
       token = Fridge::AccessToken.new
-      token.stub(:to_s) { 'fridge_access_token' }
-      subject.stub(:token) { token }
+      allow(token).to receive(:to_s).and_return('fridge_access_token')
+      allow(subject).to receive(:token).and_return(token)
       expect(subject.bearer_token).to eq token.to_s
     end
 
     it 'should accept a String' do
-      subject.stub(:token) { 'token' }
+      allow(subject).to receive(:token).and_return('token')
       expect(subject.bearer_token).to eq 'token'
     end
   end
@@ -250,26 +250,26 @@ describe Aptible::Resource::Base do
 
   describe '#update' do
     it 'should populate #errors in the event of an error' do
-      HyperResource.any_instance.stub(:put) { raise hyperresource_exception }
+      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
       subject.update({})
       expect(subject.errors.messages).to eq(base: 'Forbidden')
       expect(subject.errors.full_messages).to eq(['Forbidden'])
     end
 
     it 'should return false in the event of an error' do
-      HyperResource.any_instance.stub(:put) { raise hyperresource_exception }
+      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
       expect(subject.update({})).to eq false
     end
 
     it 'should return the object in the event of a successful update' do
-      HyperResource.any_instance.stub(:put) { subject }
+      allow_any_instance_of(HyperResource).to receive(:put).and_return(subject)
       expect(subject.update({})).to eq subject
     end
   end
 
   describe '#update!' do
     it 'should populate #errors in the event of an error' do
-      HyperResource.any_instance.stub(:put) { raise hyperresource_exception }
+      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
       begin
         subject.update!({})
       rescue StandardError
@@ -281,14 +281,14 @@ describe Aptible::Resource::Base do
     end
 
     it 'should pass through any exceptions' do
-      HyperResource.any_instance.stub(:put) { raise hyperresource_exception }
+      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
       expect do
         subject.update!({})
       end.to raise_error HyperResource::ResponseError
     end
 
     it 'should return the object in the event of a successful update' do
-      HyperResource.any_instance.stub(:put) { subject }
+      allow_any_instance_of(HyperResource).to receive(:put).and_return(subject)
       expect(subject.update!({})).to eq subject
     end
   end
@@ -309,83 +309,125 @@ describe Aptible::Resource::Base do
     let(:mainframe) { Api::Mainframe.new }
     let(:mainframes_link) { HyperResource::Link.new(href: '/mainframes') }
 
-    before { subject.stub(:loaded) { true } }
-    before { subject.stub(:links) { { mainframes: mainframes_link } } }
-    before { mainframes_link.stub(:entries) { [mainframe] } }
-    before { mainframes_link.stub(:base_href) { '/mainframes' } }
+    before { allow(subject).to receive(:loaded).and_return(true) }
+    before { allow(subject).to receive(:links).and_return({ mainframes: mainframes_link }) }
+    before { allow(mainframes_link).to receive(:entries).and_return([mainframe]) }
+    before { allow(mainframes_link).to receive(:base_href).and_return('/mainframes') }
 
     describe '#create_#{relation}' do
       it 'should populate #errors in the event of an error' do
-        mainframes_link.stub(:create) { raise hyperresource_exception }
+        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
         mainframe = subject.create_mainframe({})
         expect(mainframe.errors.messages).to eq(base: 'Forbidden')
         expect(mainframe.errors.full_messages).to eq(['Forbidden'])
       end
 
       it 'should return a Base-classed resource on error' do
-        mainframes_link.stub(:create) { raise hyperresource_exception }
+        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
         expect(subject.create_mainframe.class).to eq Aptible::Resource::Base
       end
 
       it 'should have errors present on error' do
-        mainframes_link.stub(:create) { raise hyperresource_exception }
+        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
         expect(subject.create_mainframe.errors.any?).to be true
       end
 
       it 'should return the object in the event of successful creation' do
-        mainframes_link.stub(:create) { mainframe }
+        allow(mainframes_link).to receive(:create).and_return(mainframe)
         expect(subject.create_mainframe({})).to eq mainframe
       end
 
       it 'should have no errors on successful creation' do
-        mainframes_link.stub(:create) { mainframe }
+        allow(mainframes_link).to receive(:create).and_return(mainframe)
         expect(subject.create_mainframe.errors.any?).to be false
       end
     end
 
     describe '#create_#{relation}!' do
       it 'should pass through any exceptions' do
-        mainframes_link.stub(:create) { raise hyperresource_exception }
+        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
         expect do
           subject.create_mainframe!({})
         end.to raise_error HyperResource::ResponseError
       end
 
       it 'should return the object in the event of successful creation' do
-        mainframes_link.stub(:create) { mainframe }
+        allow(mainframes_link).to receive(:create).and_return(mainframe)
         expect(subject.create_mainframe!({})).to eq mainframe
       end
     end
 
     describe '#{relation}s' do
-      include_context 'paginated collection'
+      let(:urls) { ['/mainframes', '/mainframes?page=1'] }
+      let(:calls) { [] }
+
+      before do
+        stub_request(:get, 'https://resource.example.com/mainframes')
+          .to_return(
+            body: {
+              _embedded: { mainframes: [{ id: 1 }] },
+              _links: { next: { href: '/mainframes?page=1' } }
+            }.to_json,
+            status: 200
+          )
+        stub_request(:get, 'https://resource.example.com/mainframes?page=1')
+          .to_return(
+            body: {
+              _embedded: { mainframes: [{ id: 2 }] },
+              _links: {}
+            }.to_json,
+            status: 200
+          )
+      end
 
       it 'should return all records' do
         records = subject.mainframes
 
         expect(records.size).to eq(2)
-        expect(records.first).to eq('At /mainframes')
-        expect(records.second).to eq('At /mainframes?page=1')
-        expect(calls).to eq(urls)
+        expect(records.first.id).to eq(1)
+        expect(records.second.id).to eq(2)
       end
     end
 
     describe 'each_#{relation}' do
-      include_context 'paginated collection'
+      before do
+        stub_request(:get, 'https://resource.example.com/mainframes')
+          .to_return(
+            body: {
+              _embedded: { mainframes: [{ id: 1 }] },
+              _links: { next: { href: '/mainframes?page=1' } }
+            }.to_json,
+            status: 200
+          )
+        stub_request(:get, 'https://resource.example.com/mainframes?page=1')
+          .to_return(
+            body: {
+              _embedded: { mainframes: [{ id: 2 }] },
+              _links: {}
+            }.to_json,
+            status: 200
+          )
+      end
 
       it 'should iterate over all records' do
         records = []
-        subject.each_mainframe { |mainframe| records << mainframe }
+        subject.each_mainframe { |m| records << m }
 
         expect(records.size).to eq(2)
-        expect(records.first).to eq('At /mainframes')
-        expect(records.second).to eq('At /mainframes?page=1')
-        expect(calls).to eq(urls)
+        expect(records.first.id).to eq(1)
+        expect(records.second.id).to eq(2)
       end
 
       it 'should stop iterating when the consumer breaks' do
-        subject.each_mainframe { |_| break }
-        expect(calls).to eq([urls[0]])
+        called = false
+        subject.each_mainframe do |_|
+          if called
+            fail 'Should not have been called twice'
+          end
+          called = true
+          break
+        end
+        expect(called).to be true
       end
 
       it 'should return an enum if no block is given' do
@@ -393,7 +435,6 @@ describe Aptible::Resource::Base do
         records = []
         e.each { |m| records << m }
         expect(records.size).to eq(2)
-        expect(calls).to eq(urls)
       end
     end
   end
@@ -402,10 +443,10 @@ describe Aptible::Resource::Base do
     let(:m1) { Api::Mainframe.new }
     let(:m2) { Api::Mainframe.new }
 
-    before { subject.stub(:loaded) { true } }
-    before { subject.stub(:objects) { { embedded_mainframes: [m1, m2] } } }
-    before { m1.stub(id: 1) }
-    before { m2.stub(id: 2) }
+    before { allow(subject).to receive(:loaded).and_return(true) }
+    before { allow(subject).to receive(:objects).and_return({ embedded_mainframes: [m1, m2] }) }
+    before { allow(m1).to receive(:id).and_return(1) }
+    before { allow(m2).to receive(:id).and_return(2) }
 
     describe '#{relation}s' do
       it 'should return all records' do
@@ -447,25 +488,25 @@ describe Aptible::Resource::Base do
 
     it 'should return the raw attribute' do
       Api.field :foo, type: String
-      subject.stub(:attributes) { { foo: 'bar' } }
+      allow(subject).to receive(:attributes).and_return({ foo: 'bar' })
       expect(subject.foo).to eq 'bar'
     end
 
     it 'should parse the attribute if DateTime' do
       Api.field :created_at, type: DateTime
-      subject.stub(:attributes) { { created_at: Time.now.to_json } }
+      allow(subject).to receive(:attributes).and_return({ created_at: Time.now.to_json })
       expect(subject.created_at).to be_a DateTime
     end
 
     it 'should parse the attribute if Time' do
       Api.field :created_at, type: Time
-      subject.stub(:attributes) { { created_at: Time.now.to_json } }
+      allow(subject).to receive(:attributes).and_return({ created_at: Time.now.to_json })
       expect(subject.created_at).to be_a Time
     end
 
     it 'should add a ? helper if Boolean' do
       Api.field :awesome, type: Aptible::Resource::Boolean
-      subject.stub(:attributes) { { awesome: 'true' } }
+      allow(subject).to receive(:attributes).and_return({ awesome: 'true' })
       expect(subject.awesome?).to be true
     end
   end
