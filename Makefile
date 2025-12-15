@@ -8,7 +8,8 @@ ifeq ($(RUBY_VERSION_MAJOR),2)
 export BUNDLER_VERSION = 1.17.3
 endif
 endif
-export COMPOSE_PROJECT_NAME ?= aptible-resource-$(subst .,_,$(RUBY_VERSION))
+PROJECT_NAME = $(shell ls *.gemspec | sed 's/\.gemspec//')
+export COMPOSE_PROJECT_NAME ?= $(PROJECT_NAME)-$(subst .,_,$(RUBY_VERSION))
 
 default: help
 
