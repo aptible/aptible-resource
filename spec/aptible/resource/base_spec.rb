@@ -5,9 +5,13 @@ require 'spec_helper'
 describe Aptible::Resource::Base do
   let(:hyperresource_exception) { HyperResource::ResponseError.new('403') }
   let(:error_response) { double 'Faraday::Response' }
-  before { allow(hyperresource_exception).to receive(:response).and_return(error_response) }
   before do
-    allow(error_response).to receive(:body).and_return({ message: 'Forbidden' }.to_json)
+    allow(hyperresource_exception).to receive(:response)
+      .and_return(error_response)
+  end
+  before do
+    allow(error_response).to receive(:body)
+      .and_return({ message: 'Forbidden' }.to_json)
     allow(error_response).to receive(:status).and_return(403)
   end
 
@@ -91,7 +95,8 @@ describe Aptible::Resource::Base do
       before do
         allow(collection).to receive(:entries).and_return([mainframe])
         allow(collection).to receive(:links).and_return({})
-        allow_any_instance_of(Api::Mainframe).to receive(:find_by_url).and_return(collection)
+        allow_any_instance_of(Api::Mainframe).to receive(:find_by_url)
+          .and_return(collection)
       end
 
       it 'should be an array' do
@@ -162,7 +167,10 @@ describe Aptible::Resource::Base do
     let(:mainframe) { Api::Mainframe.new }
     let(:mainframes_link) { HyperResource::Link.new(href: '/mainframes') }
 
-    before { allow_any_instance_of(Api).to receive(:mainframes).and_return(mainframes_link) }
+    before do
+      allow_any_instance_of(Api).to receive(:mainframes)
+        .and_return(mainframes_link)
+    end
     before { allow(mainframes_link).to receive(:create).and_return(mainframe) }
 
     it 'should create a new top-level resource' do
@@ -172,14 +180,16 @@ describe Aptible::Resource::Base do
     end
 
     it 'should populate #errors in the event of an error' do
-      allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+      allow(mainframes_link).to receive(:create)
+        .and_raise(hyperresource_exception)
       mainframe = Api::Mainframe.create
       expect(mainframe.errors.messages).to eq(base: 'Forbidden')
       expect(mainframe.errors.full_messages).to eq(['Forbidden'])
     end
 
     it 'should return a Base-classed resource on error' do
-      allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+      allow(mainframes_link).to receive(:create)
+        .and_raise(hyperresource_exception)
       expect(Api::Mainframe.create).to be_a Api::Mainframe
     end
 
@@ -193,11 +203,15 @@ describe Aptible::Resource::Base do
     let(:mainframe) { Api::Mainframe.new }
     let(:mainframes_link) { HyperResource::Link.new(href: '/mainframes') }
 
-    before { allow_any_instance_of(Api).to receive(:mainframes).and_return(mainframes_link) }
+    before do
+      allow_any_instance_of(Api).to receive(:mainframes)
+        .and_return(mainframes_link)
+    end
     before { allow(mainframes_link).to receive(:create).and_return(mainframe) }
 
     it 'should pass through any exceptions' do
-      allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+      allow(mainframes_link).to receive(:create)
+        .and_raise(hyperresource_exception)
       expect do
         Api::Mainframe.create!
       end.to raise_error HyperResource::ResponseError
@@ -250,14 +264,16 @@ describe Aptible::Resource::Base do
 
   describe '#update' do
     it 'should populate #errors in the event of an error' do
-      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
+      allow_any_instance_of(HyperResource).to receive(:put)
+        .and_raise(hyperresource_exception)
       subject.update({})
       expect(subject.errors.messages).to eq(base: 'Forbidden')
       expect(subject.errors.full_messages).to eq(['Forbidden'])
     end
 
     it 'should return false in the event of an error' do
-      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
+      allow_any_instance_of(HyperResource).to receive(:put)
+        .and_raise(hyperresource_exception)
       expect(subject.update({})).to eq false
     end
 
@@ -269,7 +285,8 @@ describe Aptible::Resource::Base do
 
   describe '#update!' do
     it 'should populate #errors in the event of an error' do
-      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
+      allow_any_instance_of(HyperResource).to receive(:put)
+        .and_raise(hyperresource_exception)
       begin
         subject.update!({})
       rescue StandardError
@@ -281,7 +298,8 @@ describe Aptible::Resource::Base do
     end
 
     it 'should pass through any exceptions' do
-      allow_any_instance_of(HyperResource).to receive(:put).and_raise(hyperresource_exception)
+      allow_any_instance_of(HyperResource).to receive(:put)
+        .and_raise(hyperresource_exception)
       expect do
         subject.update!({})
       end.to raise_error HyperResource::ResponseError
@@ -310,25 +328,35 @@ describe Aptible::Resource::Base do
     let(:mainframes_link) { HyperResource::Link.new(href: '/mainframes') }
 
     before { allow(subject).to receive(:loaded).and_return(true) }
-    before { allow(subject).to receive(:links).and_return({ mainframes: mainframes_link }) }
-    before { allow(mainframes_link).to receive(:entries).and_return([mainframe]) }
-    before { allow(mainframes_link).to receive(:base_href).and_return('/mainframes') }
+    before do
+      allow(subject).to receive(:links)
+        .and_return(mainframes: mainframes_link)
+    end
+    before do
+      allow(mainframes_link).to receive(:entries).and_return([mainframe])
+    end
+    before do
+      allow(mainframes_link).to receive(:base_href).and_return('/mainframes')
+    end
 
     describe '#create_#{relation}' do
       it 'should populate #errors in the event of an error' do
-        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+        allow(mainframes_link).to receive(:create)
+          .and_raise(hyperresource_exception)
         mainframe = subject.create_mainframe({})
         expect(mainframe.errors.messages).to eq(base: 'Forbidden')
         expect(mainframe.errors.full_messages).to eq(['Forbidden'])
       end
 
       it 'should return a Base-classed resource on error' do
-        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+        allow(mainframes_link).to receive(:create)
+          .and_raise(hyperresource_exception)
         expect(subject.create_mainframe.class).to eq Aptible::Resource::Base
       end
 
       it 'should have errors present on error' do
-        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+        allow(mainframes_link).to receive(:create)
+          .and_raise(hyperresource_exception)
         expect(subject.create_mainframe.errors.any?).to be true
       end
 
@@ -345,7 +373,8 @@ describe Aptible::Resource::Base do
 
     describe '#create_#{relation}!' do
       it 'should pass through any exceptions' do
-        allow(mainframes_link).to receive(:create).and_raise(hyperresource_exception)
+        allow(mainframes_link).to receive(:create)
+          .and_raise(hyperresource_exception)
         expect do
           subject.create_mainframe!({})
         end.to raise_error HyperResource::ResponseError
@@ -421,9 +450,8 @@ describe Aptible::Resource::Base do
       it 'should stop iterating when the consumer breaks' do
         called = false
         subject.each_mainframe do |_|
-          if called
-            fail 'Should not have been called twice'
-          end
+          raise 'Should not have been called twice' if called
+
           called = true
           break
         end
@@ -444,7 +472,10 @@ describe Aptible::Resource::Base do
     let(:m2) { Api::Mainframe.new }
 
     before { allow(subject).to receive(:loaded).and_return(true) }
-    before { allow(subject).to receive(:objects).and_return({ embedded_mainframes: [m1, m2] }) }
+    before do
+      allow(subject).to receive(:objects)
+        .and_return(embedded_mainframes: [m1, m2])
+    end
     before { allow(m1).to receive(:id).and_return(1) }
     before { allow(m2).to receive(:id).and_return(2) }
 
@@ -488,25 +519,27 @@ describe Aptible::Resource::Base do
 
     it 'should return the raw attribute' do
       Api.field :foo, type: String
-      allow(subject).to receive(:attributes).and_return({ foo: 'bar' })
+      allow(subject).to receive(:attributes).and_return(foo: 'bar')
       expect(subject.foo).to eq 'bar'
     end
 
     it 'should parse the attribute if DateTime' do
       Api.field :created_at, type: DateTime
-      allow(subject).to receive(:attributes).and_return({ created_at: Time.now.to_json })
+      allow(subject).to receive(:attributes)
+        .and_return(created_at: Time.now.to_json)
       expect(subject.created_at).to be_a DateTime
     end
 
     it 'should parse the attribute if Time' do
       Api.field :created_at, type: Time
-      allow(subject).to receive(:attributes).and_return({ created_at: Time.now.to_json })
+      allow(subject).to receive(:attributes)
+        .and_return(created_at: Time.now.to_json)
       expect(subject.created_at).to be_a Time
     end
 
     it 'should add a ? helper if Boolean' do
       Api.field :awesome, type: Aptible::Resource::Boolean
-      allow(subject).to receive(:attributes).and_return({ awesome: 'true' })
+      allow(subject).to receive(:attributes).and_return(awesome: 'true')
       expect(subject.awesome?).to be true
     end
   end
