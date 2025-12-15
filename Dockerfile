@@ -12,8 +12,6 @@ COPY Gemfile /app/
 COPY aptible-resource.gemspec /app/
 RUN mkdir -p /app/lib/aptible/resource/
 COPY lib/aptible/resource/version.rb /app/lib/aptible/resource/
-RUN mkdir -p /app/lib/aptible/resource/
-COPY lib/aptible/resource/version.rb /app/lib/aptible/resource/
 RUN mkdir -p /app/lib/hyper_resource/
 COPY lib/hyper_resource/version.rb /app/lib/hyper_resource/
 
