@@ -8,7 +8,7 @@ ifeq ($(RUBY_VERSION_MAJOR),2)
 export BUNDLER_VERSION = 1.17.3
 endif
 endif
-export COMPOSE_PROJECT_NAME ?= aptible-resource-ruby-$(subst .,_,$(RUBY_VERSION))
+export COMPOSE_PROJECT_NAME ?= aptible-resource-$(subst .,_,$(RUBY_VERSION))
 
 default: help
 
