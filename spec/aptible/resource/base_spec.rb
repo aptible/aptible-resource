@@ -5,6 +5,7 @@ require 'spec_helper'
 describe Aptible::Resource::Base do
   let(:hyperresource_exception) { HyperResource::ResponseError.new('403') }
   let(:error_response) { double 'Faraday::Response' }
+  let(:expected_root_url) { "https://resource.example.com" }
   before do
     allow(hyperresource_exception).to receive(:response)
       .and_return(error_response)
@@ -17,34 +18,25 @@ describe Aptible::Resource::Base do
 
   shared_context 'paginated collection' do
     let(:urls) { ['/mainframes', '/mainframes?page=1'] }
-    let(:calls) { [] }
+    let(:expected_calls) {
+      urls.map { |u| [:get, "#{expected_root_url}#{u}"] }
+    }
+    let(:expected_record_ids) {
+      urls.map.with_index { |_, i| i + 1 }
+    }
 
     before do
-      pages = {}
-
       urls.each_with_index do |url, idx|
-        collection = double("Collection for #{url}")
-        links = {}
-
-        allow(collection).to receive(:entries).and_return(["At #{url}"])
-        allow(collection).to receive(:links).and_return(links)
-
-        next_url = urls[idx + 1]
-        if next_url
-          links['next'] = HyperResource::Link.new(nil, 'href' => next_url)
-        end
-
-        pages[url] = collection
-      end
-
-      [Api, Api::Mainframe].each do |klass|
-        allow_any_instance_of(klass).to receive(:find_by_url) do |_instance, u|
-          calls << u
-          page = pages[u]
-          raise "Accessed unexpected URL #{u}" if page.nil?
-
-          page
-        end
+        next_href = {}
+        next_href = { next: { href: urls[idx + 1] } } if urls[idx + 1]
+        stub_request(:get, "#{expected_root_url}#{url}")
+          .to_return(
+            body: {
+              _embedded: { mainframes: [{ id: idx + 1, _type: 'mainframe' }] },
+              _links: next_href
+            }.to_json,
+            status: 200
+          )
       end
     end
   end
@@ -55,6 +47,14 @@ describe Aptible::Resource::Base do
     it 'should use the pluralized resource name' do
       url = Api::Mainframe.collection_href
       expect(url).to eq '/mainframes'
+    end
+  end
+
+  describe '.root_url' do
+    it 'should have a root_url with no trailing slash' do
+      the_url = Api.new.root_url
+      expect(the_url).not_to end_with('/')
+      expect(the_url).to eq(expected_root_url)
     end
   end
 
@@ -121,9 +121,12 @@ describe Aptible::Resource::Base do
       it 'should collect entries from all pages' do
         records = Api::Mainframe.all
         expect(records.size).to eq(2)
-        expect(records.first).to eq('At /mainframes')
-        expect(records.second).to eq('At /mainframes?page=1')
-        expect(calls).to eq(urls)
+        expect(records).to all(be_a_kind_of(Api::Mainframe))
+        expect(records.first.id).to eq(1)
+        expect(records.second.id).to eq(2)
+        expected_calls.each do |args|
+          expect(WebMock).to have_requested(*args)
+        end
       end
 
       it "should return an empty list for a URL that doesn't exist" do
@@ -140,18 +143,25 @@ describe Aptible::Resource::Base do
       pages = 0
       Api::Mainframe.each_page { pages += 1 }
       expect(pages).to eq(2)
-      expect(calls).to eq(urls)
+      expected_calls.each do |args|
+        expect(WebMock).to have_requested(*args)
+      end
     end
 
     it 'should find all records' do
-      records = ['At /mainframes', 'At /mainframes?page=1']
-      Api::Mainframe.each_page { |p| expect(p).to eq([records.shift]) }
-      expect(calls).to eq(urls)
+      Api::Mainframe.each_page do |p|
+        expect(p).to all(be_a_kind_of(Api::Mainframe))
+        expect(p.map {|m| m.id}).to eq([expected_record_ids.shift])
+      end
+      expected_calls.each do |args|
+        expect(WebMock).to have_requested(*args)
+      end
     end
 
     it 'should not access more URLs if the consumer breaks' do
       Api::Mainframe.each_page { break }
-      expect(calls).to eq(['/mainframes'])
+      expect(WebMock).to have_requested(*expected_calls.first)
+      expect(WebMock).not_to have_requested(*expected_calls.second)
     end
 
     it 'should return an enum if no block is given' do
@@ -159,7 +169,9 @@ describe Aptible::Resource::Base do
       pages = 0
       e.each { pages += 1 }
       expect(pages).to eq(2)
-      expect(calls).to eq(urls)
+      expected_calls.each do |args|
+        expect(WebMock).to have_requested(*args)
+      end
     end
   end
 
@@ -387,75 +399,39 @@ describe Aptible::Resource::Base do
     end
 
     describe '#{relation}s' do
-      let(:urls) { ['/mainframes', '/mainframes?page=1'] }
-      let(:calls) { [] }
-
-      before do
-        stub_request(:get, 'https://resource.example.com/mainframes')
-          .to_return(
-            body: {
-              _embedded: { mainframes: [{ id: 1 }] },
-              _links: { next: { href: '/mainframes?page=1' } }
-            }.to_json,
-            status: 200
-          )
-        stub_request(:get, 'https://resource.example.com/mainframes?page=1')
-          .to_return(
-            body: {
-              _embedded: { mainframes: [{ id: 2 }] },
-              _links: {}
-            }.to_json,
-            status: 200
-          )
-      end
+      include_context 'paginated collection'
 
       it 'should return all records' do
         records = subject.mainframes
-
         expect(records.size).to eq(2)
+        expect(records).to all(be_a_kind_of(Api::Mainframe))
         expect(records.first.id).to eq(1)
         expect(records.second.id).to eq(2)
+        expected_calls.each do |args|
+          expect(WebMock).to have_requested(*args)
+        end
       end
     end
 
     describe 'each_#{relation}' do
-      before do
-        stub_request(:get, 'https://resource.example.com/mainframes')
-          .to_return(
-            body: {
-              _embedded: { mainframes: [{ id: 1 }] },
-              _links: { next: { href: '/mainframes?page=1' } }
-            }.to_json,
-            status: 200
-          )
-        stub_request(:get, 'https://resource.example.com/mainframes?page=1')
-          .to_return(
-            body: {
-              _embedded: { mainframes: [{ id: 2 }] },
-              _links: {}
-            }.to_json,
-            status: 200
-          )
-      end
+      include_context 'paginated collection'
 
       it 'should iterate over all records' do
         records = []
         subject.each_mainframe { |m| records << m }
-
         expect(records.size).to eq(2)
+        expect(records).to all(be_a_kind_of(Api::Mainframe))
         expect(records.first.id).to eq(1)
         expect(records.second.id).to eq(2)
+        expected_calls.each do |args|
+          expect(WebMock).to have_requested(*args)
+        end
       end
 
       it 'should stop iterating when the consumer breaks' do
-        called = false
-        subject.each_mainframe do |_|
-          raise 'Should not have been called twice' if called
-
-          called = true
-          break
-        end
-        expect(called).to be true
+        subject.each_mainframe { |_| break }
+        expect(WebMock).to have_requested(*expected_calls.first)
+        expect(WebMock).not_to have_requested(*expected_calls.second)
       end
 
       it 'should return an enum if no block is given' do
@@ -463,6 +439,10 @@ describe Aptible::Resource::Base do
         records = []
         e.each { |m| records << m }
         expect(records.size).to eq(2)
+        expect(records).to all(be_a_kind_of(Api::Mainframe))
+        expected_calls.each do |args|
+          expect(WebMock).to have_requested(*args)
+        end
       end
     end
   end
