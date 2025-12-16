@@ -5,7 +5,7 @@ require 'spec_helper'
 describe Aptible::Resource::Base do
   let(:hyperresource_exception) { HyperResource::ResponseError.new('403') }
   let(:error_response) { double 'Faraday::Response' }
-  let(:expected_root_url) { "https://resource.example.com" }
+  let(:expected_root_url) { 'https://resource.example.com' }
   before do
     allow(hyperresource_exception).to receive(:response)
       .and_return(error_response)
@@ -18,12 +18,12 @@ describe Aptible::Resource::Base do
 
   shared_context 'paginated collection' do
     let(:urls) { ['/mainframes', '/mainframes?page=1'] }
-    let(:expected_calls) {
+    let(:expected_calls) do
       urls.map { |u| [:get, "#{expected_root_url}#{u}"] }
-    }
-    let(:expected_record_ids) {
+    end
+    let(:expected_record_ids) do
       urls.map.with_index { |_, i| i + 1 }
-    }
+    end
 
     before do
       urls.each_with_index do |url, idx|
@@ -151,7 +151,7 @@ describe Aptible::Resource::Base do
     it 'should find all records' do
       Api::Mainframe.each_page do |p|
         expect(p).to all(be_a_kind_of(Api::Mainframe))
-        expect(p.map {|m| m.id}).to eq([expected_record_ids.shift])
+        expect(p.map(&:id)).to eq([expected_record_ids.shift])
       end
       expected_calls.each do |args|
         expect(WebMock).to have_requested(*args)
