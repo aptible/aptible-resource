@@ -22,7 +22,7 @@ module Aptible
       attr_reader :token
 
       def self.get_data_type_from_response(response)
-        return nil unless response && response.body
+        return nil unless response && response.body && !response.body.empty?
 
         adapter.get_data_type_from_object(adapter.deserialize(response.body))
       end

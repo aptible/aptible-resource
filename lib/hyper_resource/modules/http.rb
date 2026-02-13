@@ -168,7 +168,8 @@ class HyperResource
         body = adapter_error = nil
 
         begin
-          body = adapter.deserialize(response.body) unless response.body.nil?
+          # Skip deserialization for nil or empty bodies (e.g., 204 No Content)
+          body = adapter.deserialize(response.body) unless response.body.nil? || response.body.empty?
         rescue StandardError => e
           adapter_error = e
         end
@@ -211,7 +212,7 @@ class HyperResource
         # be attributes..
         self.response = response
         self.body = body
-        adapter.apply(body, self)
+        adapter.apply(body, self) if body
         self.loaded = true
 
         to_response_class
