@@ -19,7 +19,7 @@ module Aptible
     # rubocop:disable DuplicateMethods
     class Base < HyperResource
       attr_accessor :errors
-      attr_reader :token
+      attr_reader :token, :remote_ip
 
       def self.get_data_type_from_response(response)
         return nil unless response && response.body
@@ -236,6 +236,7 @@ module Aptible
         populate_default_options!(options)
         super(options)
         self.token = options[:token] if options[:token]
+        self.remote_ip = options[:remote_ip] if options[:remote_ip]
       end
       # rubocop:enable ReturnInVoidContext
 
@@ -249,6 +250,12 @@ module Aptible
       def token=(val)
         @token = val
         headers['Authorization'] = "Bearer #{bearer_token}"
+      end
+
+      def remote_ip=(val)
+        @remote_ip = val
+        existing = headers['X-Forwarded-For']
+        headers['X-Forwarded-For'] = existing ? "#{val}, #{existing}" : val
       end
 
       def adapter

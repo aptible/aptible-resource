@@ -719,6 +719,37 @@ describe Aptible::Resource::Base do
     end
   end
 
+  context 'remote_ip' do
+    subject { Api.new(root: 'http://example.com', remote_ip: '1.2.3.4') }
+
+    before do
+      stub_request(:get, 'example.com/')
+        .with(headers: { 'X-Forwarded-For' => '1.2.3.4' })
+        .to_return(body: {
+          _links: { some: { href: 'http://example.com/some' } }
+        }.to_json, status: 200)
+
+      stub_request(:get, 'example.com/some')
+        .with(headers: { 'X-Forwarded-For' => '1.2.3.4' })
+        .to_return(body: { status: 'ok' }.to_json, status: 200)
+    end
+
+    it 'should set the X-Forwarded-For header' do
+      expect(subject.headers['X-Forwarded-For']).to eq('1.2.3.4')
+    end
+
+    it 'should persist X-Forwarded-For when following links' do
+      expect(subject.some.get.body).to eq('status' => 'ok')
+    end
+
+    it 'should prepend remote_ip to an existing X-Forwarded-For header' do
+      r = Api.new(root: 'http://example.com',
+                  headers: { 'X-Forwarded-For' => '5.6.7.8' },
+                  remote_ip: '1.2.3.4')
+      expect(r.headers['X-Forwarded-For']).to eq('1.2.3.4, 5.6.7.8')
+    end
+  end
+
   context 'lazy fetching' do
     subject { Api.new(root: 'http://foo.com') }
 
