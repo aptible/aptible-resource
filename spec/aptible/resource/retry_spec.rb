@@ -6,7 +6,7 @@ describe Aptible::Resource::Base do
   let(:body) do
     { 'hello' => '1', '_links' => { 'self' => { 'href' => href } } }
   end
-  let(:json_body) { JSON.unparse(body) }
+  let(:json_body) { JSON.generate(body) }
   let(:href) { 'https://resource.example.com/mainframes/1' }
 
   subject do
